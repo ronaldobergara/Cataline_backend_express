@@ -1,4 +1,6 @@
 import express, { response } from "express";
+import { v4 as uuid } from 'uuid'
+
 
 const app = express()
 
@@ -12,34 +14,66 @@ app.use(express.json())
 // response = retorno de uma resposta para o front end por exemplo
 
 
+// como não estamos utilizando banco de dados vamos criar um array para guardar as informações
+// Como estamos utilizando typeScript vamos criar uma interface
+interface User {
+    id: string,
+    name : string,
+    email : string
+}
+const users: User[] = []
+
+// Na rota de POST para criar os usuarios de ID único vamos utilizar uma biblioteca a uuid
+// vamos instalar em modo de desenvolvimento e importa-la
+// npm install uuid
+// npm install @types/uuid -D
+
 app.get('/users', (request, response) => {
 
-    const {perPage, page} = request.query
-
-    console.log(perPage)
-    console.log(page)
-
-    return response.json(['usuário 1', 'usuário 2'])
+    // retorna a lista de users
+    return response.json(users)
 })
 
 app.post('/users', (request, response) => {
-    const body = request.body
+    const { name, email } = request.body
 
-    console.log(body)
+    const user = { id: uuid(), name, email }
 
-    return response.json({ message: 'Criando usuário' })
+    users.push(user)
+
+    return response.json(user)
+
 })
 
 app.put('/users/:id', (request, response) => {
     const { id } = request.params
+    const { name, email } = request.body
 
-    console.log(id)
+    const userIndex = users.findIndex((user) => user.id === id)
 
-    return response.json({ message: 'Atualizando usuário'})
+    if (userIndex < 0){
+        return response.status(404).json({ erro: 'Usuario não encontrado.'})
+    }
+
+    const user = { id, name, email }
+    users[userIndex] = user
+
+    return response.json(user)
+
 })
 
-app.delete('/users', (request, response) => {
-    return response.json({ message: 'Excluindo usuário' })
+app.delete('/users/:id', (request, response) => {
+    const { id } = request.params
+    
+    const userIndex = users.findIndex((user) => user.id === id)
+
+    if (userIndex < 0){
+        return response.status(404).json({ erro: 'Usuario não encontrado.'})
+    }
+
+    users.splice(userIndex, 1)
+
+    return response.status(204).send()
 })
 
 app.listen('3333', () => {
